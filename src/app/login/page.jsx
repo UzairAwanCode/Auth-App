@@ -7,13 +7,14 @@ import { signIn, useSession } from 'next-auth/react'
 function Login() {
     const router = useRouter()
     const [error, setError] = useState('')
-    const session = useSession()
+    // const session = useSession()
+    const { data: session, status: sessionStatus } = useSession()
 
     useEffect(() => {
-        if (session?.status === 'authenticated') {
+        if (sessionStatus === 'authenticated') {
             router.replace('/dashboard')
         }
-    }, [session, router])
+    }, [sessionStatus, router])
 
     const isValidEmail = (email) => {
         const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
@@ -49,7 +50,7 @@ function Login() {
         if (res?.error) {
             setError("Invalid Email or Password")
             if (res?.url) {
-                router.replace('/dashboard')
+                router.replace('/login')
             }
             else {
                 setError("Invalid Email or Password")
@@ -57,8 +58,11 @@ function Login() {
         }
     }
 
+    if (sessionStatus === 'loading') {
+        return <div>Loading...</div>
+    }
     return (
-        <div className='flex min-h-screen flex-col items-center justify-between p-24'>
+        sessionStatus != 'authenticated' && <div className='flex min-h-screen flex-col items-center justify-between p-24'>
             <div className='bg-[#212121] p-8 rounded shadow-md w-96'>
                 <h1 className='text-4xl text-center font-semibold mb-8'>Login</h1>
                 <form onSubmit={handleSubmit}>
@@ -67,6 +71,7 @@ function Login() {
                     <button type='submit' className='w-full bg-blue-500 text-white rounded py-2 hover:bg-blue-600'>{" "}Sign In</button>
                     <p className='text-red-600 texr-[16px] mb-4'>{error && error}</p>
                 </form>
+                <button className="w-full bg-black text-white py-2 rounded hover:bg-gray-800" onClick={() => { signIn("github") }}>Sign In with Github</button>
                 <div className='text-center text-gray-500 mt-4'>- OR -</div>
                 <Link className='block text-center text-blue-500 hover:underline mt-2' href='/register'>
                     Register Here

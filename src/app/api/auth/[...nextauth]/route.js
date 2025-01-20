@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import User from "@/models/User";
 import connect from "@/utils/db";
+import { signIn } from "next-auth/react";
 
 export const authOptions = {
     providers: [
@@ -35,6 +36,31 @@ export const authOptions = {
             clientSecret: process.env.GITHUB_SECRET ?? ""
         })
     ],
+    callbacks: {
+        async signIn({ user, account }) {
+            if (account?.provider == "credentials") {
+                return true;
+            }
+            if (account?.provider == "github") {
+                await connect()
+                try {
+                    const existingUser = await User.findOne({ email: user.email })
+                    if (!existingUser) {
+                        const newUser = new User({
+                            email: user.email
+                        })
+                        await newUser.save()
+                        return true
+                    }
+                    return true
+                }
+                catch (err) {
+                    throw new Error(err.message || "An error occurred")
+                    return false
+                }
+            }
+        }
+    },
     pages: {
         signIn: "/login", // Custom sign-in page
         error: "/login" // Redirect to the login page on error
